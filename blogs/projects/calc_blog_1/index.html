@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI calculator in C using RPN and GTK</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/blogs">Blogs</a>
+            <a href="/gallery">Gallery</a>
+            <a href="/resume/">Resume</a>
+        </div>
+    </nav>
+
+    <main>
+        
+<link rel="stylesheet" href="/css/posts.css">
+<article class="blog-post">
+    <header class="post-header">
+        <h1>GUI calculator in C using RPN and GTK</h1>
+        
+        <time datetime="2025-07-11T00:00:00.000Z">July 11, 2025</time>
+        
+        
+        <div class="tags">
+            
+                
+            
+        </div>
+        
+    </header>
+
+    <div class="post-content">
+        <h2>From Switch-Case to Signals: My Journey Building a GTK Calculator in C</h2>
+<p>I have been brushing up my C concepts through The C language course by PyjamaBrah. In one of the sections, <a href="https://www.linkedin.com/in/streetdogg/">Piyush</a> showed a basic CLI calculator that used a <code>switch-case</code> to evaluate the result of two operands and an operator.</p>
+<p>Here’s what it looked like:</p>
+<pre><code>scanf(&quot;%f&quot;, &amp;input1);
+scanf(&quot;%f&quot;, &amp;input1);
+scanf(&quot;%c&quot;, &amp;op);
+switch (op){
+	case '-':
+		....
+	case '+':
+		...
+	case '*':
+		...
+	case '/':
+		...
+}
+</code></pre>
+<p>Of course, this was just meant to demonstrate <code>switch</code>.
+So ..</p>
+<ul>
+<li>No input validation (wrong input? crash.)</li>
+<li>And definitely no support for full expressions like <code>3 + 5 * 2</code></li>
+<li>Only decimal and floating point calculations</li>
+</ul>
+<p>That got me thinking: <strong>how big is the gap between this and a basic GUI calculator?</strong></p>
+<hr>
+<h2>Goals: What I Wanted My Calculator to Do</h2>
+<p>Before diving into code, I set some ground rules. My calculator should:</p>
+<ol>
+<li>Handle full expressions using BODMAS</li>
+<li>Gracefully handle invalid inputs</li>
+<li>Have a working GUI</li>
+<li>Be modular enough to add new operators easily in the future</li>
+</ol>
+<hr>
+<h2>Expressions, RPN &amp; Shunting Yard</h2>
+<p>If you look up how calculators handle expression parsing, you’ll quickly run into a few terms:</p>
+<ul>
+<li><strong>Infix</strong> (e.g., <code>3 - 5 / 2</code>) — what humans use</li>
+<li><strong>Postfix</strong> aka <strong>Reverse Polish Notation (RPN)</strong> (e.g., <code>3 5 2 / -</code>) — what computers prefer</li>
+<li><strong>Shunting Yard Algorithm</strong> — invented by Dijkstra, used to convert infix to postfix</li>
+</ul>
+<p>Why postfix? Because it lets you evaluate expressions <strong>without</strong> worrying about parentheses or operator precedence — you just process the tokens left to right using a stack.</p>
+<p>If you’ve never heard of this, this video explains it well.
+<a href="https://www.youtube.com/watch?v=Wz85Hiwi5MY&amp;t=125s">Comp Sci in 5: Shunting Yard Algorithm - YouTube</a></p>
+<hr>
+<h2>Structs, Enums, and Stacks — Building the Engine</h2>
+<p>To implement all this in C, I needed to mimic:</p>
+<ul>
+<li>A <strong>stack</strong> for operators</li>
+<li>A <strong>queue</strong> for output</li>
+<li>And a way to represent both operands and operators using <code>enum</code> + <code>struct</code></li>
+</ul>
+<p>Here’s the rough structure of the core:<br>
+<img src="/assets/calc-storage-diagram.png" alt="core structure"></p>
+<p>With the tokenizer, RPN creator, and evaluator in place, I now had a CLI-based calculator that could handle proper math expressions.</p>
+<p>Here's the first working version:<br>
+<img src="/assets/calc-1st-commit.png" alt="Initial program"></p>
+<hr>
+<h2>Next Step: A GUI</h2>
+<p>I’ve never built GUI apps before, but I wanted something that felt “real.” I checked how GNOME Calculator worked and saw it used <strong>GTK</strong>. That seemed like a good path to follow.</p>
+<p>So I installed GTK and started playing around.</p>
+<hr>
+<h2>Designing the UI: Glade to the Rescue</h2>
+<p>GTK lets you build UIs in two ways:</p>
+<ol>
+<li>Manually create widgets in C</li>
+<li>Use a UI definition file (<code>.ui</code>) written in XML</li>
+</ol>
+<p>Even a simple calculator UI can get bloated fast. Creating each button and setting its properties in C would be a nightmare. So I used <strong>Glade</strong> — a drag-and-drop GUI builder that outputs <code>ui.glade</code> files for GTK.</p>
+<p>Here’s what the initial UI skeleton looked like:<br>
+<img src="/assets/calc-glade.png" alt="Initial program"></p>
+<hr>
+<h2>Connecting Logic to UI</h2>
+<p>Once the layout was ready, I had to:</p>
+<ul>
+<li>Load the <code>.ui</code> file using <code>GtkBuilder</code></li>
+<li>Connect buttons and keyboard inputs to <strong>callback functions</strong></li>
+<li>Wire up input/output using <code>GtkEntry</code> and <code>GtkTextView</code></li>
+</ul>
+<p>At this point, the UI was interactive but didn't actually evaluate anything.</p>
+<hr>
+<h2>Hooking Up the Backend</h2>
+<p>Now came the cool part: plug the CLI logic into the GUI.</p>
+<p>Instead of reading from <code>stdin</code>, the evaluator now takes input from the <code>GtkEntry</code> when the user presses <code>=</code> or hits Enter. If the input is valid, we show the result in the same entry. If it’s not, the error goes to a <code>GtkTextView</code>.</p>
+<p>Everything else stayed pretty much the same — just more visual.</p>
+<hr>
+<h2>Final Overview</h2>
+<p>Here’s how the calculator works under the hood:<br>
+<img src="/assets/calc-sequence-diagram.png" alt="Initial program"></p>
+<video  controls>
+  <source src="/assets/calc_working.mp4" type="video/mp4">
+</video> 
+<hr>
+<h2>What I Learned</h2>
+<ul>
+<li>You can mimic OOP's concepts using structs, function pointers and opaque types.</li>
+<li>Even though frameworks like GTK abstract away large part of GUI development, it's still complicated due to how elements interact with each other.</li>
+<li>Spending some time to setup debug logs, and build automation (makefile/Cmake) saves a ton of time in long run.</li>
+<li>Valgrind makes Segfualts feel less painful.</li>
+</ul>
+<hr>
+<h2>Possible Next Steps</h2>
+<ul>
+<li>Add  expression history</li>
+<li>Fix memory leaks that I ignored</li>
+</ul>
+<p>For anyone interested here's link to <a href="https://github.com/Asc91/dumb_calculator">source code</a></p>
+
+    </div>
+
+    <footer class="post-footer">
+        <div class="post-navigation"></div>
+    </footer>
+</article>
+    </main>
+
+    <footer>
+        <p>Made at midnight with <a href="https://www.11ty.dev/">11ty </a> </p>
+    </footer>
+
+    <script src="/js/typewriter.js"></script>
+    <script data-goatcounter="https://asc91.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+
+</body>
+</html>
